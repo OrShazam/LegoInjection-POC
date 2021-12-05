@@ -1,2 +1,2 @@
 # LegoInjection-POC
-process injection without WriteProcessMemory
+process injection without WriteProcessMemory, uses ntdll-scraper
