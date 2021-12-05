@@ -1,6 +1,7 @@
 
 
 #include "scrap.h"
+#include <psapi.h>
 
 BOOL FillScraperData(PScraperData data, const char* dllName){
 	static NTSTATUS(WINAPI *_GetModuleInformation)(
