@@ -15,12 +15,12 @@ BOOL FillScraperData(PScraperData data, const char* dllName){
 		return FALSE;
 	}
 	if (!_GetModuleInformation){
-		HMODULE kernel32 = LoadLibraryA("kernel32.dll");
-		if (!kernel32){
+		HMODULE hPsapi = LoadLibraryA("psapi.dll");
+		if (!hPsapi){
 			// shouldn't happen
 			return FALSE;
 		}
-		FARPROC procPtr = GetProcAddress(kernel32,"GetModuleInformation");
+		FARPROC procPtr = GetProcAddress(hPsapi,"GetModuleInformation");
 		if (!procPtr){
 			return FALSE;
 		}
