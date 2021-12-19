@@ -18,7 +18,7 @@ BOOL InjectShellcode(HANDLE hProcess,HANDLE hThread,PBYTE shellcode, size_t shel
 		__in_opt LPVOID ApcArgument3
 	) = NULL;
 	
-	HANDLE hNtdll = LoadLibraryA("ntdll.dll");
+	HANDLE hNtdll = GetModuleHandleA("ntdll.dll");
 	if (hNtdll == NULL)
 		return FALSE;
 	// ntdll should be loaded at the same address for all processes
