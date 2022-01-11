@@ -3,4 +3,4 @@
 
 
 
-BOOL InjectShellcode(DWORD processId,PBYTE shellcode, size_t shellcodeSize);
+BOOL InjectShellcode(HANDLE hProcess,HANDLE hThread,PBYTE shellcode, size_t shellcodeSize);
